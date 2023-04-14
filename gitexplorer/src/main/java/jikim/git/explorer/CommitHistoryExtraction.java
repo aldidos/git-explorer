@@ -18,6 +18,7 @@ import jikim.git.explorer.repository.ObjectParser;
 import jikim.git.explorer.repository.RepositoryFactory;
 import jikim.git.explorer.repository.commands.GitDiff;
 import jikim.git.explorer.repository.commands.GitLog;
+import jikim.git.explorer.utils.JSONWriteStream;
 
 public class CommitHistoryExtraction 
 {
@@ -30,20 +31,40 @@ public class CommitHistoryExtraction
 
     public void run() throws IOException, NoHeadException, GitAPIException
     {
-        for ( File repoDir : Paths.get( option.baseRepositoryDirPath ).toFile().listFiles() ) 
+        switch ( option.inputPathType )
         {
-            Log.log("from " + repoDir.toPath() );
-            List<CommitHistory> listCommitHistory = extractCommitHistory( repoDir );
-            String writePath = option.outputDirPath + repoDir.getName() + ".json";
-            CommitHistory.writeToJSON(listCommitHistory, writePath);
-        }
-    }    
+            case CommitHistoryExtractionOption.OPTION_INPUT_PATH_TYPE_DIR : 
+                extractAllCommitHistory();
+                break;
 
-    public List<CommitHistory> extractCommitHistory(File repoDir) throws IOException, NoHeadException, GitAPIException
+            case CommitHistoryExtractionOption.OPTION_INPUT_PATH_TYPE_TARGET :
+                File repoDir = Paths.get( option.inputPath ).toFile();
+                extractCommitHistory(repoDir);
+                break;
+        }        
+    }
+
+    public void extractAllCommitHistory() throws NoHeadException, IOException, GitAPIException
     {
+        for ( File repoDir : Paths.get( option.inputPath ).toFile().listFiles() ) 
+        {            
+            extractCommitHistory(repoDir);
+        }
+    }
+
+    public void extractCommitHistory(File repoDir) throws IOException, NoHeadException, GitAPIException
+    {
+        String jsonWritePath = option.outputDirPath + repoDir.getName() + ".json";
+        JSONWriteStream writeStream = new JSONWriteStream( jsonWritePath );
+        extractCommitHistory(repoDir, writeStream);            
+        writeStream.close();
+    }
+
+    public void extractCommitHistory(File repoDir, JSONWriteStream writeStream) throws IOException, NoHeadException, GitAPIException
+    {
+        Log.log("from " + repoDir.toPath() );
         Repository repository = RepositoryFactory.create( repoDir.getAbsolutePath() );
         Iterable<RevCommit> iter = GitLog.logAll( repository );
-        List<CommitHistory> listCommitHistory = new ArrayList<CommitHistory>();
 
         for ( RevCommit revCommit : iter ) 
         {
@@ -54,11 +75,9 @@ public class CommitHistoryExtraction
                 List<DiffEntry> listDiffs = GitDiff.getDiffEntries(repository, curCommit, parentCommit);
                 
                 CommitHistory commitHistory = createCommitHistory(curCommit, parentCommit, listDiffs);
-                listCommitHistory.add( commitHistory );
+                writeStream.write(commitHistory, CommitHistory.class);
             }
         }
-
-        return listCommitHistory;
     }
 
     private CommitHistory createCommitHistory(RevCommit curCommit, RevCommit parentCommit,  List<DiffEntry> listDiffs) 

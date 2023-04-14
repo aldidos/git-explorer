@@ -1,4 +1,4 @@
-package jikim;
+package jikim.git.explorer;
 
 import static org.junit.Assert.assertTrue;
 

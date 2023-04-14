@@ -9,7 +9,11 @@ import com.google.gson.Gson;
 
 public class CommitHistoryExtractionOption 
 {
-    String baseRepositoryDirPath;
+    public static final String OPTION_INPUT_PATH_TYPE_TARGET = "path-type-target";
+    public static final String OPTION_INPUT_PATH_TYPE_DIR = "path-type-dir";
+
+    String inputPathType;
+    String inputPath;
     String outputDirPath;
     
     public static CommitHistoryExtractionOption read(String jsonPath) throws IOException
