@@ -35,8 +35,7 @@ public class CommitHistoryExtraction
             Log.log("from " + repoDir.toPath() );
             List<CommitHistory> listCommitHistory = extractCommitHistory( repoDir );
             String writePath = option.outputDirPath + repoDir.getName() + ".json";
-            CommitHistory.writeToJSON(listCommitHistory, writePath);            
-            break;
+            CommitHistory.writeToJSON(listCommitHistory, writePath);
         }
     }    
 
